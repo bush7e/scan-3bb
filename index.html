@@ -1,141 +1,851 @@
 <!DOCTYPE html>
-<html lang="th"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>สแกน QR ค่าอินเทอร์เน็ต 3BB</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
-<style>
-:root{--bg:#f6f7f9;--fg:#1a1d21;--card:#fff;--bd:#d9dde3;--ac:#e8590c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--fg:#eceef1;--card:#1f2226;--bd:#363b42}}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Sarabun","Noto Sans Thai",sans-serif;padding:16px}
-.wrap{max-width:560px;margin:auto}
-h1{font-size:20px;margin:0 0 12px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
-button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
-button.alt{background:transparent;color:var(--fg);border:1px solid var(--bd)}
-select,input{font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);width:100%;box-sizing:border-box}
-video{width:100%;border-radius:8px;display:none;background:#000}
-.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--bd)}
-.row:last-child{border:0}.row b{text-align:right}
-.big{font-size:26px;color:var(--ac);font-weight:700}
-label{font-size:13px;opacity:.8;display:block;margin:8px 0 2px}
-#form{display:none}
-@media print{
- body{background:#fff;color:#000;padding:0}.wrap{display:none}
- #form{display:block!important;padding:20px}
-}
-#form{font-family:"Sarabun","Noto Sans Thai",sans-serif;color:#000;background:#fff}
-#form table{width:100%;border-collapse:collapse;font-size:15px}
-#form td{border:1px solid #000;padding:6px 8px;vertical-align:top}
-.sig{display:flex;justify-content:space-between;margin-top:80px;text-align:center;font-size:15px}
-.wrap{max-width:760px}.tw{overflow-x:auto}.tb{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}.tb th,.tb td{border:1px solid var(--fg);padding:6px 4px;text-align:center}.tb th{background:rgba(128,128,128,.25)}.tb tr.hl td{background:#ffb703;color:#000;font-weight:700}.ttl{font-weight:700;margin-bottom:8px}
-</style></head><body>
-<div class="wrap">
-<h1>🧾 ค่าอินเทอร์เน็ต 3BB: สแกน QR เพื่อเบิกจ่าย</h1>
-<div class="card">
- <button id="scanBtn">📷 สแกน QR Code</button>
- <button class="alt" id="stopBtn" style="display:none">ยกเลิก</button>
- <button class="alt" id="photoBtn">🖼️ ถ่ายรูป / เลือกรูป QR</button><input type="file" id="photoIn" accept="image/*" capture="environment" hidden>
- <video id="v" playsinline muted style="margin-top:10px"></video>
- <label>ลืมรหัสลูกค้า / กล้องใช้ไม่ได้? กรอกอย่างใดอย่างหนึ่งจากใบแจ้งหนี้</label>
- <div style="display:flex;gap:8px;margin-bottom:6px"><input id="accIn" inputmode="numeric" placeholder="รหัสลูกค้า เช่น 410443826"><button class="alt" id="accBtn">ค้นหา</button></div>
- <div style="display:flex;gap:8px"><input id="svcIn" placeholder="หมายเลขบริการ เช่น A212119700542"><button class="alt" id="svcBtn">ค้นหา</button></div>
- <div id="msg" style="font-size:13px;margin-top:8px;opacity:.8"></div>
-</div>
-<div id="result" class="card" style="display:none">
- <div class="ttl" id="tTitle"></div>
- <div class="tw"><table class="tb"><thead><tr><th>ลำดับ</th><th>ชื่อ</th><th>หมายเลขบริการ</th><th>รหัสลูกค้า</th><th>ค่าบริการ</th><th>กำหนดชำระ</th><th>รอบค่าบริการ</th></tr></thead><tbody><tr class="hl" id="tRow"></tr></tbody></table></div>
- <label>รอบเดือน</label><input id="period" value="12/10/2026 – 11/11/2026">
- <label>ผู้จัดทำ</label><input id="maker" value="นางสาวเพชรรัตน์ มะโนนิน">
- <label>ตำแหน่งผู้จัดทำ</label><input id="makerPos" value="เจ้าหน้าที่บริหารงาน GPS.">
- <label>ผู้อนุมัติ</label><input id="appr" value="นางโสภิดา คำอินทร์">
- <label>ตำแหน่งผู้อนุมัติ</label><input id="apprPos" value="ผู้จัดการส่วนสำนักงานจัดหาวัตถุดิบ">
- <button style="margin-top:14px;width:100%" id="printBtn">🖨️ Print ใบรายงานการขอเบิกค่าใช้จ่าย</button>
-</div>
-<div style="font-size:12px;opacity:.65">ต้นแบบ: ข้อมูลจากตารางในรูปที่ 1 (บางแถวอ่านจากภาพ ควรตรวจสอบก่อนใช้จริง) · QR ของแต่ละศูนย์ควรเป็นลิงก์ ?acc=รหัสลูกค้า</div>
-</div>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>สแกน QR ค่าอินเทอร์เน็ต 3BB</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
 
-<div id="form">
- <table>
-  <tr><td style="width:62%"><div style="font-size:22px;font-weight:700">รายงานการขอเบิกค่าใช้จ่าย</div>
-   <div style="margin-top:8px">ประจำรอบเดือน <span id="fPeriod"></span></div>
-   <div style="margin-top:6px">งวดที่ ☐ 1-15 &nbsp;&nbsp;&nbsp; ☐ 16-31</div></td>
-   <td style="text-align:center;vertical-align:middle"><b style="font-size:26px">KI</b><br>บริษัท น้ำตาลสุรินทร์ จำกัด</td></tr>
-  <tr><td colspan="2" style="text-align:center;font-weight:700;height:50px;vertical-align:middle">ฝ่ายจัดหาวัตถุดิบ</td></tr>
-  <tr><td colspan="2"><u>สำนักงาน</u><br><br>ค่าอินเทอร์เน็ต<span id="fName"></span> (3BB) &nbsp;&nbsp;&nbsp; <b id="fAmt"></b> บาท
-   <br><br>ค่าอินเทอร์เน็ต ........ บาท<br>ค่าอินเทอร์เน็ต ........ บาท</td></tr>
-  <tr><td style="height:120px"><u>วัสดุ/อุปกรณ์ สนง.</u><br>ค่าวัสดุสำนักงาน ......... บาท</td><td><u>ค่าซ่อมแซม</u><br>ค่าซ่อมแซม ......... บาท</td></tr>
-  <tr><td colspan="2" style="height:70px"><u>รถยนต์</u></td></tr>
-  <tr><td colspan="2" style="text-align:center;font-weight:700;font-size:17px">รวมขอเบิกค่าใช้จ่ายทั้งหมด <span id="fAmt2"></span> บาท (<span id="fWords"></span>)</td></tr>
- </table>
- <div class="sig">
-  <div>ลงชื่อ.............................ผู้จัดทำ<br><span id="fMaker"></span><br><span id="fMakerPos"></span></div>
-  <div>ลงชื่อ.............................ผู้อนุมัติ<br><span id="fAppr"></span><br><span id="fApprPos"></span></div>
- </div>
-</div>
+  <!-- ===================== หน้าจอหลัก ===================== -->
+  <div class="wrap">
+    <h1>🧾 ค่าอินเทอร์เน็ต 3BB: สแกน QR เพื่อเบิกจ่าย</h1>
+
+    <!-- ส่วนที่ 1: สแกน / ค้นหา -->
+    <div class="card">
+      <button id="scanBtn">📷 สแกน QR Code</button>
+      <button id="stopBtn" class="alt">ยกเลิก</button>
+      <button id="photoBtn" class="alt">🖼️ ถ่ายรูป / เลือกรูป QR</button>
+      <input type="file" id="photoIn" accept="image/*" capture="environment" hidden>
+
+      <video id="v" playsinline muted></video>
+
+      <label>ลืมรหัสลูกค้า / กล้องใช้ไม่ได้? กรอกอย่างใดอย่างหนึ่งจากใบแจ้งหนี้</label>
+      <div class="search-row">
+        <input id="accIn" inputmode="numeric" placeholder="รหัสลูกค้า เช่น 410443826">
+        <button id="accBtn" class="alt">ค้นหา</button>
+      </div>
+      <div class="search-row">
+        <input id="svcIn" placeholder="หมายเลขบริการ เช่น A212119700542">
+        <button id="svcBtn" class="alt">ค้นหา</button>
+      </div>
+
+      <div id="msg"></div>
+    </div>
+
+    <!-- ส่วนที่ 2: ผลลัพธ์ (ซ่อนจนกว่าจะสแกน/ค้นหาเจอ) -->
+    <div id="result" class="card">
+      <div id="tTitle" class="ttl"></div>
+
+      <div class="tw">
+        <table class="tb">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่อ</th>
+              <th>หมายเลขบริการ</th>
+              <th>รหัสลูกค้า</th>
+              <th>ค่าบริการ</th>
+              <th>กำหนดชำระ</th>
+              <th>รอบค่าบริการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="tRow" class="hl"></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <label>รอบเดือน</label>
+      <input id="period" value="12/10/2026 – 11/11/2026">
+      <label>ผู้จัดทำ</label>
+      <input id="maker" value="นางสาวเพชรรัตน์ มะโนนิน">
+      <label>ตำแหน่งผู้จัดทำ</label>
+      <input id="makerPos" value="เจ้าหน้าที่บริหารงาน GPS.">
+      <label>ผู้อนุมัติ</label>
+      <input id="appr" value="นางโสภิดา คำอินทร์">
+      <label>ตำแหน่งผู้อนุมัติ</label>
+      <input id="apprPos" value="ผู้จัดการส่วนสำนักงานจัดหาวัตถุดิบ">
+
+      <button id="printBtn" class="btn-print">🖨️ Print ใบรายงานการขอเบิกค่าใช้จ่าย</button>
+    </div>
+
+    <div class="note">
+      ต้นแบบ: ข้อมูลจากตารางในรูปที่ 1 (บางแถวอ่านจากภาพ ควรตรวจสอบก่อนใช้จริง) ·
+      QR ของแต่ละศูนย์ควรเป็นลิงก์ ?acc=รหัสลูกค้า
+    </div>
+  </div>
+
+  <!-- ===================== ใบรายงานการขอเบิกค่าใช้จ่าย (ใช้พิมพ์) ===================== -->
+  <div id="form">
+    <table>
+      <tr>
+        <td class="f-left">
+          <div class="f-title">รายงานการขอเบิกค่าใช้จ่าย</div>
+          <div class="f-sub">ประจำรอบเดือน <span id="fPeriod"></span></div>
+          <div class="f-sub2">งวดที่ ☐ 1-15 &nbsp;&nbsp;&nbsp; ☐ 16-31</div>
+        </td>
+        <td class="f-logo"><b>KI</b><br>บริษัท น้ำตาลสุรินทร์ จำกัด</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-dept">ฝ่ายจัดหาวัตถุดิบ</td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          <u>สำนักงาน</u><br><br>
+          ค่าอินเทอร์เน็ต<span id="fName"></span> (3BB) &nbsp;&nbsp;&nbsp; <b id="fAmt"></b> บาท
+          <br><br>
+          ค่าอินเทอร์เน็ต ........ บาท<br>
+          ค่าอินเทอร์เน็ต ........ บาท
+        </td>
+      </tr>
+      <tr>
+        <td class="f-h120"><u>วัสดุ/อุปกรณ์ สนง.</u><br>ค่าวัสดุสำนักงาน ......... บาท</td>
+        <td><u>ค่าซ่อมแซม</u><br>ค่าซ่อมแซม ......... บาท</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-h70"><u>รถยนต์</u></td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-total">
+          รวมขอเบิกค่าใช้จ่ายทั้งหมด <span id="fAmt2"></span> บาท (<span id="fWords"></span>)
+        </td>
+      </tr>
+    </table>
+
+    <div class="sig">
+      <div>ลงชื่อ.............................ผู้จัดทำ<br><span id="fMaker"></span><br><span id="fMakerPos"></span></div>
+      <div>ลงชื่อ.............................ผู้อนุมัติ<br><span id="fAppr"></span><br><span id="fApprPos"></span></div>
+    </div>
+  </div>
 
 <script>
-const D=[
-["ศูนย์โคกตะเคียน","A211192000339","660662393",631.30,"24/10/2569"],
-["ศูนย์ประโคนชัย","A170611200049","680015339",749,"04/11/2569"],
-["ศูนย์ด่าน","A211120000033","680080673",749,"04/11/2569"],
-["ศูนย์โคกอุดม (นากระแสง)","A180281000335","680407287",749,"28/10/2569"],
-["ศูนย์ปรางค์กู่","A200716000023","680075144",749,"01/11/2569"],
-["ศูนย์กันทรลักษ์","A201831000086","680075119",749,"16/10/2569"],
-["ศูนย์อุทุมพร","A200672000002","680074847",749,"01/11/2569"],
-["ศูนย์พนมรุ้ง","A170615800282","600191229",749,"24/10/2569"],
-["ห้องรับรองคุณมั่นคง","A210294000096","600197730",749,"12/10/2569"],
-["ศูนย์ท่าสว่าง","A212119700542","410443826",749,"12/11/2569","AAISAD2210013884064"],
-["บริษัท น้ำตาลสุรินทร์ (ห้อง IT)","A2230015712699","430317126",749,"04/11/2569"],
-["ศูนย์บัวเชด 2 (โคกหิน)","AAIS2411039555","440333948",749,"16/10/2569"],
-["ศูนย์กันทรารมย์ (โนนคูณ)","AAIS2512263527","450317981",642,"27/10/2569"],
-["ศูนย์บ้านชบ (สังขะ 1)","AAIS2511257888","450313986",642,"31/10/2569"],
-["ศูนย์เมืองสุรินทร์","AAIS2511257877","450313973",642,"31/10/2569"],
-["ศูนย์ย่อยตำบลสวาย (ใหม่)","AAIS2605275939","460009077",535,"23/10/2569"],
-["ศูนย์ศรีขรภูมิ (บ้านบึง)","AAIS2608282481","460015833",642,"23/10/2569"]
-].map(a=>({name:a[0],svc:a[1],acc:a[2],amt:a[3],due:a[4],alt:a[5]||""}));
-const $=id=>document.getElementById(id);
-const fmt=n=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const NS=[1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
-function per(due){const[p,m,y]=due.split("/").map(Number),g=y-543,a=new Date(g,m-2,p),b=new Date(g,m-1,p-1),f=t=>String(t.getDate()).padStart(2,"0")+"/"+String(t.getMonth()+1).padStart(2,"0")+"/"+String((t.getFullYear()+543)%100);return f(a)+"-"+f(b)}
-let cur=null;
-function show(d){cur=d;$("result").style.display="block";$("tTitle").textContent="อินเทอร์เน็ต 3BB "+d.name+" (วันที่กำหนดชำระ "+d.due+")";
- const i=D.indexOf(d);$("tRow").innerHTML=[NS[i],d.name,d.svc,d.acc,fmt(d.amt),d.due,per(d.due)].map(x=>"<td>"+x+"</td>").join("");$("result").scrollIntoView({behavior:"smooth"})}
-function look(id){const v=$(id).value.trim();const d=v.length>=6?match(v):null;if(d){$("msg").textContent="";show(d)}else $("msg").textContent="ไม่พบข้อมูลนี้ในระบบ ตรวจสอบตัวเลข/ตัวอักษรอีกครั้ง"}
-$("accBtn").onclick=()=>look("accIn");$("svcBtn").onclick=()=>look("svcIn");
-["accIn","svcIn"].forEach(i=>$(i).addEventListener("keydown",e=>{if(e.key==="Enter")look(i)}));
-["accIn","svcIn"].forEach(i=>$(i).addEventListener("input",()=>{const o=i==="accIn"?"svcIn":"accIn";if($(i).value)$(o).value="";$("msg").textContent="";if(!$(i).value.trim()){cur=null;$("result").style.display="none"}}));
-function match(t){t=String(t).toUpperCase().replace(/\s/g,"");return D.find(d=>t.includes(d.acc)||t.includes(d.svc.toUpperCase())||(d.alt&&t.includes(d.alt)))}
-// bahtText
-const N=["ศูนย์","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"],U=["","สิบ","ร้อย","พัน","หมื่น","แสน"];
-function th(n){if(n==0)return"";if(n>=1e6)return th(Math.floor(n/1e6))+"ล้าน"+th(n%1e6);const s=String(n);let r="";for(let i=0;i<s.length;i++){const d=+s[i],p=s.length-i-1;if(!d)continue;if(p==1)r+=(d==1?"":d==2?"ยี่":N[d])+"สิบ";else if(p==0)r+=(d==1&&s.length>1?"เอ็ด":N[d]);else r+=N[d]+U[p]}return r}
-function baht(a){const b=Math.floor(a),s=Math.round((a-b)*100);return th(b)+"บาท"+(s?th(s)+"สตางค์":"ถ้วน")}
-$("printBtn").onclick=()=>{if(!cur)return;
- $("fPeriod").textContent=$("period").value;$("fName").textContent=cur.name.replace(/^ศูนย์/,"ศูนย์");
- $("fAmt").textContent=fmt(cur.amt);$("fAmt2").textContent=fmt(cur.amt);$("fWords").textContent=baht(cur.amt);
- $("fMaker").textContent="("+$("maker").value+")";$("fMakerPos").textContent="("+$("makerPos").value+")";
- $("fAppr").textContent="("+$("appr").value+")";$("fApprPos").textContent="("+$("apprPos").value+")";
- window.print()};
-// scanner
-let stream=null,raf=0;
-function stop(){cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$("v").style.display="none";$("stopBtn").style.display="none";$("scanBtn").style.display=""}
-$("stopBtn").onclick=stop;
-$("scanBtn").onclick=async()=>{
- try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080}}})}
- catch(e){$("msg").textContent="เปิดกล้องสดไม่ได้ ["+(e&&e.name||"error")+"] ลองเปิดลิงก์ในแท็บใหม่และกดอนุญาตกล้อง หรือกดปุ่ม ถ่ายรูป QR แทน";return}
- const v=$("v");v.srcObject=stream;v.style.display="block";await v.play();$("stopBtn").style.display="";$("scanBtn").style.display="none";$("msg").textContent="วาง QR ให้อยู่ในกรอบกล้อง…";
- const c=document.createElement("canvas"),x=c.getContext("2d",{willReadFrequently:true});
- let busy=0;const loop=async()=>{if(!stream)return;if(v.videoWidth&&!busy){busy=1;c.width=v.videoWidth;c.height=v.videoHeight;x.drawImage(v,0,0);
-  const t=await decode(c);busy=0;const r=t?{data:t}:null;if(!stream)return;
-  if(r){const d=match(r.data);if(d){stop();$("msg").textContent="";show(d);return}else $("msg").textContent="อ่าน QR ได้ แต่ไม่พบศูนย์ในระบบ: "+r.data.slice(0,40)}}
-  raf=requestAnimationFrame(loop)};loop()};
-let BD=null;try{if("BarcodeDetector" in window)BD=new BarcodeDetector({formats:["qr_code"]})}catch(e){}
-async function decode(c){if(BD){try{const b=await BD.detect(c);if(b.length)return b[0].rawValue}catch(e){}}
- const id=c.getContext("2d",{willReadFrequently:true}).getImageData(0,0,c.width,c.height),r=jsQR(id.data,c.width,c.height,{inversionAttempts:"attemptBoth"});return r?r.data:null}
-$("photoBtn").onclick=()=>$("photoIn").click();
-$("photoIn").onchange=e=>{const f=e.target.files[0];if(!f)return;$("msg").textContent="กำลังอ่าน QR…";const im=new Image();im.onload=async()=>{let r=null;for(const m of [2000,1400,900,500]){const s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d",{willReadFrequently:true}).drawImage(im,0,0,c.width,c.height);const t=await decode(c);if(t){r={data:t};break}}
- URL.revokeObjectURL(im.src);if(!r){$("msg").textContent="อ่าน QR จากรูปไม่ได้ ลองถ่ายใหม่ให้ QR ชัดและอยู่กลางภาพ";return}
- const d=match(r.data);if(d){$("msg").textContent="";show(d)}else $("msg").textContent="อ่าน QR ได้ แต่ไม่พบศูนย์ในระบบ: "+r.data.slice(0,40)};
- im.onerror=()=>{$("msg").textContent="เปิดรูปไม่ได้"};im.src=URL.createObjectURL(f);e.target.value=""};
-// open via link ?acc=...
-const q=new URLSearchParams(location.search).get("acc");if(q){const d=match(q);if(d)show(d)}
-</script></body></html>
+/* =========================================================
+   1. ข้อมูลศูนย์ — โหลดจาก data.xlsx (ถ้ามี) หรือ data.csv แล้วแก้เลขที่ Excel ทำเพี้ยนให้อัตโนมัติ
+   คอลัมน์: ลำดับ, ชื่อ, หมายเลขบริการ, รหัสลูกค้า, ค่าบริการ, กำหนดชำระ, หมายเลขบริการสำรอง(ถ้ามี)
+   ========================================================= */
+let CENTERS = [];
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  text = text.replace(/^\uFEFF/, "");
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else quoted = false; }
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); cell = ""; rows.push(row); row = [];
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+const pad2 = n => String(n).padStart(2, "0");
+
+// รหัส/หมายเลข: ถ้า Excel เก็บเป็นตัวเลข ให้แปลงกลับเป็นข้อความเต็ม ๆ (เช่น 660662393)
+function normCode(v) {
+  if (typeof v === "number") return String(Math.round(v));
+  return String(v == null ? "" : v).trim();
+}
+
+// วันที่: รับได้ทั้งข้อความ 04/11/2569, 04/11/2026 และเลขวันที่ของ Excel -> dd/mm/ปีพ.ศ.
+function normDate(v) {
+  if (typeof v === "number") {                       // เลขลำดับวันที่ของ Excel
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    let y = d.getUTCFullYear();
+    if (y < 2400) y += 543;
+    return pad2(d.getUTCDate()) + "/" + pad2(d.getUTCMonth() + 1) + "/" + y;
+  }
+  const s = String(v == null ? "" : v).trim();
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (!m) return s;
+  let y = +m[3];
+  if (y < 2400) y += 543;
+  return pad2(m[1]) + "/" + pad2(m[2]) + "/" + y;
+}
+
+function normAmount(v) {
+  return typeof v === "number" ? v : (parseFloat(String(v).replace(/,/g, "")) || 0);
+}
+
+// อ่านแถวข้อมูล: data.xlsx ก่อน (เลขไม่เพี้ยน) แล้วสำรองด้วย data.csv
+async function fetchRows() {
+  try {
+    const res = await fetch("data.xlsx?" + Date.now());
+    if (res.ok && window.XLSX) {
+      const wb = XLSX.read(await res.arrayBuffer(), { type: "array" });
+      return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: "" });
+    }
+  } catch (e) { /* ไม่มี xlsx -> ใช้ csv */ }
+  const res = await fetch("data.csv?" + Date.now());
+  if (!res.ok) throw new Error(res.status);
+  return parseCSV(await res.text());
+}
+
+async function loadCenters() {
+  try {
+    const rows = await fetchRows();
+    CENTERS = rows.slice(1)
+      .filter(r => r.length >= 6 && normCode(r[2]) && normCode(r[3]))
+      .map(r => ({
+        no:   String(r[0]).trim(),
+        name: String(r[1]).trim(),
+        svc:  normCode(r[2]),
+        acc:  normCode(r[3]),
+        amt:  normAmount(r[4]),
+        due:  normDate(r[5]),
+        alt:  normCode(r[6])
+      }));
+    const bad = CENTERS.filter(d => /E\+/i.test(d.acc) || /E\+/i.test(d.svc));
+    if (bad.length) {
+      setMsg("ข้อมูลเพี้ยน: รหัสของ " + bad.length + " ศูนย์เป็นรูป 6.8E+08 (Excel ปัดเลขทิ้ง) " +
+             "กรุณาใช้ไฟล์ .xlsx ต้นฉบับ หรือตั้งคอลัมน์เป็น Text ก่อนบันทึก CSV");
+    }
+  } catch (e) {
+    setMsg("โหลดข้อมูลศูนย์ไม่ได้ (data.xlsx / data.csv) [" + (e && e.message || "error") + "]");
+  }
+}
+
+/* =========================================================
+   2. ตัวช่วยทั่วไป
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const setMsg = text => { $("msg").textContent = text; };
+
+const fmt = n => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// รอบค่าบริการ: ย้อนจากวันกำหนดชำระ 1 เดือน (เช่น 12/11/69 -> 12/10/69-11/11/69)
+function billingPeriod(due) {
+  const [p, m, y] = due.split("/").map(Number);
+  const g = y - 543;
+  const start = new Date(g, m - 2, p);
+  const end = new Date(g, m - 1, p - 1);
+  const f = t =>
+    String(t.getDate()).padStart(2, "0") + "/" +
+    String(t.getMonth() + 1).padStart(2, "0") + "/" +
+    String((t.getFullYear() + 543) % 100);
+  return f(start) + "-" + f(end);
+}
+
+// ค้นหาศูนย์จากข้อความ (รหัสลูกค้า / หมายเลขบริการ / ข้อความใน QR)
+function match(text) {
+  const t = String(text).toUpperCase().replace(/\s/g, "");
+  return CENTERS.find(d =>
+    t.includes(d.acc) ||
+    t.includes(d.svc.toUpperCase()) ||
+    (d.alt && t.includes(d.alt.toUpperCase()))
+  );
+}
+
+/* =========================================================
+   3. แสดงผล / ค้นหาด้วยการพิมพ์
+   ========================================================= */
+let current = null;   // ศูนย์ที่แสดงอยู่
+
+function show(d) {
+  current = d;
+  $("result").style.display = "block";
+  $("tTitle").textContent = "อินเทอร์เน็ต 3BB " + d.name + " (วันที่กำหนดชำระ " + d.due + ")";
+  $("tRow").innerHTML = [d.no, d.name, d.svc, d.acc, fmt(d.amt), d.due, billingPeriod(d.due)]
+    .map(x => "<td>" + x + "</td>").join("");
+  $("result").scrollIntoView({ behavior: "smooth" });
+}
+
+function hideResult() {
+  current = null;
+  $("result").style.display = "none";
+}
+
+function lookup(inputId) {
+  const v = $(inputId).value.trim();
+  const d = v.length >= 6 ? match(v) : null;
+  if (d) { setMsg(""); show(d); }
+  else setMsg("ไม่พบข้อมูลนี้ในระบบ ตรวจสอบตัวเลข/ตัวอักษรอีกครั้ง");
+}
+
+$("accBtn").onclick = () => lookup("accIn");
+$("svcBtn").onclick = () => lookup("svcIn");
+
+["accIn", "svcIn"].forEach(id => {
+  const other = id === "accIn" ? "svcIn" : "accIn";
+  $(id).addEventListener("keydown", e => { if (e.key === "Enter") lookup(id); });
+  $(id).addEventListener("input", () => {
+    if ($(id).value) $(other).value = "";          // พิมพ์ช่องหนึ่ง ล้างอีกช่อง
+    setMsg("");
+    if (!$(id).value.trim()) hideResult();         // ลบเลขจนว่าง -> ซ่อนผลลัพธ์
+  });
+});
+
+/* =========================================================
+   4. แปลงตัวเลขเป็นตัวอักษรไทย (บาท)
+   ========================================================= */
+const DIGITS = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+const UNITS  = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน"];
+
+function thaiNumber(n) {
+  if (n === 0) return "";
+  if (n >= 1e6) return thaiNumber(Math.floor(n / 1e6)) + "ล้าน" + thaiNumber(n % 1e6);
+  const s = String(n);
+  let r = "";
+  for (let i = 0; i < s.length; i++) {
+    const d = +s[i], p = s.length - i - 1;
+    if (!d) continue;
+    if (p === 1)      r += (d === 1 ? "" : d === 2 ? "ยี่" : DIGITS[d]) + "สิบ";
+    else if (p === 0) r += (d === 1 && s.length > 1 ? "เอ็ด" : DIGITS[d]);
+    else              r += DIGITS[d] + UNITS[p];
+  }
+  return r;
+}
+
+function bahtText(a) {
+  const b = Math.floor(a);
+  const s = Math.round((a - b) * 100);
+  return thaiNumber(b) + "บาท" + (s ? thaiNumber(s) + "สตางค์" : "ถ้วน");
+}
+
+/* =========================================================
+   5. พิมพ์ใบรายงานการขอเบิกค่าใช้จ่าย
+   ========================================================= */
+$("printBtn").onclick = () => {
+  if (!current) return;
+  $("fPeriod").textContent  = $("period").value;
+  $("fName").textContent    = current.name;
+  $("fAmt").textContent     = fmt(current.amt);
+  $("fAmt2").textContent    = fmt(current.amt);
+  $("fWords").textContent   = bahtText(current.amt);
+  $("fMaker").textContent   = "(" + $("maker").value + ")";
+  $("fMakerPos").textContent = "(" + $("makerPos").value + ")";
+  $("fAppr").textContent    = "(" + $("appr").value + ")";
+  $("fApprPos").textContent = "(" + $("apprPos").value + ")";
+  window.print();
+};
+
+/* =========================================================
+   6. อ่าน QR: ตัวอ่านของเบราว์เซอร์ก่อน แล้วสำรองด้วย jsQR
+   ========================================================= */
+let detector = null;
+try {
+  if ("BarcodeDetector" in window) detector = new BarcodeDetector({ formats: ["qr_code"] });
+} catch (e) { /* ใช้ jsQR แทน */ }
+
+async function decode(canvas) {
+  if (detector) {
+    try {
+      const found = await detector.detect(canvas);
+      if (found.length) return found[0].rawValue;
+    } catch (e) { /* ลอง jsQR ต่อ */ }
+  }
+  const img = canvas.getContext("2d", { willReadFrequently: true })
+    .getImageData(0, 0, canvas.width, canvas.height);
+  const r = jsQR(img.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
+  return r ? r.data : null;
+}
+
+function handleQrText(text) {
+  const d = match(text);
+  if (d) { setMsg(""); show(d); return true; }
+  setMsg("อ่าน QR ได้ แต่ไม่พบศูนย์ในระบบ: " + text.slice(0, 40));
+  return false;
+}
+
+/* ---------- 6.1 กล้องสด ---------- */
+let stream = null, raf = 0;
+
+function stopCamera() {
+  cancelAnimationFrame(raf);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  $("v").style.display = "none";
+  $("stopBtn").style.display = "none";
+  $("scanBtn").style.display = "";
+}
+
+$("stopBtn").onclick = stopCamera;
+
+$("scanBtn").onclick = async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+  } catch (e) {
+    setMsg("เปิดกล้องสดไม่ได้ [" + (e && e.name || "error") +
+           "] ลองเปิดลิงก์ในแท็บใหม่และกดอนุญาตกล้อง หรือกดปุ่ม ถ่ายรูป QR แทน");
+    return;
+  }
+
+  const v = $("v");
+  v.srcObject = stream;
+  v.style.display = "block";
+  await v.play();
+  $("stopBtn").style.display = "inline-block";
+  $("scanBtn").style.display = "none";
+  setMsg("วาง QR ให้อยู่ในกรอบกล้อง…");
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  let busy = false;
+
+  const loop = async () => {
+    if (!stream) return;
+    if (v.videoWidth && !busy) {
+      busy = true;
+      canvas.width = v.videoWidth;
+      canvas.height = v.videoHeight;
+      ctx.drawImage(v, 0, 0);
+      const text = await decode(canvas);
+      busy = false;
+      if (!stream) return;
+      if (text && handleQrText(text)) { stopCamera(); return; }
+    }
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+};
+
+/* ---------- 6.2 ถ่ายรูป / เลือกรูป ---------- */
+$("photoBtn").onclick = () => $("photoIn").click();
+
+$("photoIn").onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  setMsg("กำลังอ่าน QR…");
+
+  const img = new Image();
+  img.onload = async () => {
+    let text = null;
+    for (const maxSize of [2000, 1400, 900, 500]) {          // ลองหลายขนาดภาพ
+      const s = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s);
+      c.height = Math.round(img.height * s);
+      c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0, c.width, c.height);
+      text = await decode(c);
+      if (text) break;
+    }
+    URL.revokeObjectURL(img.src);
+    if (!text) { setMsg("อ่าน QR จากรูปไม่ได้ ลองถ่ายใหม่ให้ QR ชัดและอยู่กลางภาพ"); return; }
+    handleQrText(text);
+  };
+  img.onerror = () => setMsg("เปิดรูปไม่ได้");
+  img.src = URL.createObjectURL(file);
+  e.target.value = "";
+};
+
+/* =========================================================
+   7. เปิดผ่านลิงก์ ?acc=รหัสลูกค้า (สำหรับ QR ที่สร้างเอง)
+   ========================================================= */
+loadCenters().then(() => {
+  const accParam = new URLSearchParams(location.search).get("acc");
+  if (accParam) {
+    const d = match(accParam);
+    if (d) show(d);
+  }
+});
+</script>
+</head>
+<body>
+
+  <!-- ===================== หน้าจอหลัก ===================== -->
+  <div class="wrap">
+    <h1>🧾 ค่าอินเทอร์เน็ต 3BB: สแกน QR เพื่อเบิกจ่าย</h1>
+
+    <!-- ส่วนที่ 1: สแกน / ค้นหา -->
+    <div class="card">
+      <button id="scanBtn">📷 สแกน QR Code</button>
+      <button id="stopBtn" class="alt">ยกเลิก</button>
+      <button id="photoBtn" class="alt">🖼️ ถ่ายรูป / เลือกรูป QR</button>
+      <input type="file" id="photoIn" accept="image/*" capture="environment" hidden>
+
+      <video id="v" playsinline muted></video>
+
+      <label>ลืมรหัสลูกค้า / กล้องใช้ไม่ได้? กรอกอย่างใดอย่างหนึ่งจากใบแจ้งหนี้</label>
+      <div class="search-row">
+        <input id="accIn" inputmode="numeric" placeholder="รหัสลูกค้า เช่น 410443826">
+        <button id="accBtn" class="alt">ค้นหา</button>
+      </div>
+      <div class="search-row">
+        <input id="svcIn" placeholder="หมายเลขบริการ เช่น A212119700542">
+        <button id="svcBtn" class="alt">ค้นหา</button>
+      </div>
+
+      <div id="msg"></div>
+    </div>
+
+    <!-- ส่วนที่ 2: ผลลัพธ์ (ซ่อนจนกว่าจะสแกน/ค้นหาเจอ) -->
+    <div id="result" class="card">
+      <div id="tTitle" class="ttl"></div>
+
+      <div class="tw">
+        <table class="tb">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่อ</th>
+              <th>หมายเลขบริการ</th>
+              <th>รหัสลูกค้า</th>
+              <th>ค่าบริการ</th>
+              <th>กำหนดชำระ</th>
+              <th>รอบค่าบริการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="tRow" class="hl"></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <label>รอบเดือน</label>
+      <input id="period" value="12/10/2026 – 11/11/2026">
+      <label>ผู้จัดทำ</label>
+      <input id="maker" value="นางสาวเพชรรัตน์ มะโนนิน">
+      <label>ตำแหน่งผู้จัดทำ</label>
+      <input id="makerPos" value="เจ้าหน้าที่บริหารงาน GPS.">
+      <label>ผู้อนุมัติ</label>
+      <input id="appr" value="นางโสภิดา คำอินทร์">
+      <label>ตำแหน่งผู้อนุมัติ</label>
+      <input id="apprPos" value="ผู้จัดการส่วนสำนักงานจัดหาวัตถุดิบ">
+
+      <button id="printBtn" class="btn-print">🖨️ Print ใบรายงานการขอเบิกค่าใช้จ่าย</button>
+    </div>
+
+    <div class="note">
+      ต้นแบบ: ข้อมูลจากตารางในรูปที่ 1 (บางแถวอ่านจากภาพ ควรตรวจสอบก่อนใช้จริง) ·
+      QR ของแต่ละศูนย์ควรเป็นลิงก์ ?acc=รหัสลูกค้า
+    </div>
+  </div>
+
+  <!-- ===================== ใบรายงานการขอเบิกค่าใช้จ่าย (ใช้พิมพ์) ===================== -->
+  <div id="form">
+    <table>
+      <tr>
+        <td class="f-left">
+          <div class="f-title">รายงานการขอเบิกค่าใช้จ่าย</div>
+          <div class="f-sub">ประจำรอบเดือน <span id="fPeriod"></span></div>
+          <div class="f-sub2">งวดที่ ☐ 1-15 &nbsp;&nbsp;&nbsp; ☐ 16-31</div>
+        </td>
+        <td class="f-logo"><b>KI</b><br>บริษัท น้ำตาลสุรินทร์ จำกัด</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-dept">ฝ่ายจัดหาวัตถุดิบ</td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          <u>สำนักงาน</u><br><br>
+          ค่าอินเทอร์เน็ต<span id="fName"></span> (3BB) &nbsp;&nbsp;&nbsp; <b id="fAmt"></b> บาท
+          <br><br>
+          ค่าอินเทอร์เน็ต ........ บาท<br>
+          ค่าอินเทอร์เน็ต ........ บาท
+        </td>
+      </tr>
+      <tr>
+        <td class="f-h120"><u>วัสดุ/อุปกรณ์ สนง.</u><br>ค่าวัสดุสำนักงาน ......... บาท</td>
+        <td><u>ค่าซ่อมแซม</u><br>ค่าซ่อมแซม ......... บาท</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-h70"><u>รถยนต์</u></td>
+      </tr>
+      <tr>
+        <td colspan="2" class="f-total">
+          รวมขอเบิกค่าใช้จ่ายทั้งหมด <span id="fAmt2"></span> บาท (<span id="fWords"></span>)
+        </td>
+      </tr>
+    </table>
+
+    <div class="sig">
+      <div>ลงชื่อ.............................ผู้จัดทำ<br><span id="fMaker"></span><br><span id="fMakerPos"></span></div>
+      <div>ลงชื่อ.............................ผู้อนุมัติ<br><span id="fAppr"></span><br><span id="fApprPos"></span></div>
+    </div>
+  </div>
+
+<script>
+/* =========================================================
+   1. ข้อมูลศูนย์ — โหลดจาก data.xlsx (ถ้ามี) หรือ data.csv แล้วแก้เลขที่ Excel ทำเพี้ยนให้อัตโนมัติ
+   คอลัมน์: ลำดับ, ชื่อ, หมายเลขบริการ, รหัสลูกค้า, ค่าบริการ, กำหนดชำระ, หมายเลขบริการสำรอง(ถ้ามี)
+   ========================================================= */
+let CENTERS = [];
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  text = text.replace(/^\uFEFF/, "");
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else quoted = false; }
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); cell = ""; rows.push(row); row = [];
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+async function loadCenters() {
+  try {
+    const res = await fetch("data.csv?" + Date.now());
+    if (!res.ok) throw new Error(res.status);
+    CENTERS = parseCSV(await res.text()).slice(1)
+      .filter(r => r.length >= 6 && r[2].trim() && r[3].trim())
+      .map(r => ({
+        no:   r[0].trim(),
+        name: r[1].trim(),
+        svc:  r[2].trim(),
+        acc:  r[3].trim(),
+        amt:  parseFloat(r[4].replace(/,/g, "")) || 0,
+        due:  r[5].trim(),
+        alt:  (r[6] || "").trim()
+      }));
+  } catch (e) {
+    setMsg("โหลดข้อมูลศูนย์ไม่ได้ (data.csv) [" + (e && e.message || "error") + "]");
+  }
+}
+
+/* =========================================================
+   2. ตัวช่วยทั่วไป
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const setMsg = text => { $("msg").textContent = text; };
+
+const fmt = n => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// รอบค่าบริการ: ย้อนจากวันกำหนดชำระ 1 เดือน (เช่น 12/11/69 -> 12/10/69-11/11/69)
+function billingPeriod(due) {
+  const [p, m, y] = due.split("/").map(Number);
+  const g = y - 543;
+  const start = new Date(g, m - 2, p);
+  const end = new Date(g, m - 1, p - 1);
+  const f = t =>
+    String(t.getDate()).padStart(2, "0") + "/" +
+    String(t.getMonth() + 1).padStart(2, "0") + "/" +
+    String((t.getFullYear() + 543) % 100);
+  return f(start) + "-" + f(end);
+}
+
+// ค้นหาศูนย์จากข้อความ (รหัสลูกค้า / หมายเลขบริการ / ข้อความใน QR)
+function match(text) {
+  const t = String(text).toUpperCase().replace(/\s/g, "");
+  return CENTERS.find(d =>
+    t.includes(d.acc) ||
+    t.includes(d.svc.toUpperCase()) ||
+    (d.alt && t.includes(d.alt.toUpperCase()))
+  );
+}
+
+/* =========================================================
+   3. แสดงผล / ค้นหาด้วยการพิมพ์
+   ========================================================= */
+let current = null;   // ศูนย์ที่แสดงอยู่
+
+function show(d) {
+  current = d;
+  $("result").style.display = "block";
+  $("tTitle").textContent = "อินเทอร์เน็ต 3BB " + d.name + " (วันที่กำหนดชำระ " + d.due + ")";
+  $("tRow").innerHTML = [d.no, d.name, d.svc, d.acc, fmt(d.amt), d.due, billingPeriod(d.due)]
+    .map(x => "<td>" + x + "</td>").join("");
+  $("result").scrollIntoView({ behavior: "smooth" });
+}
+
+function hideResult() {
+  current = null;
+  $("result").style.display = "none";
+}
+
+function lookup(inputId) {
+  const v = $(inputId).value.trim();
+  const d = v.length >= 6 ? match(v) : null;
+  if (d) { setMsg(""); show(d); }
+  else setMsg("ไม่พบข้อมูลนี้ในระบบ ตรวจสอบตัวเลข/ตัวอักษรอีกครั้ง");
+}
+
+$("accBtn").onclick = () => lookup("accIn");
+$("svcBtn").onclick = () => lookup("svcIn");
+
+["accIn", "svcIn"].forEach(id => {
+  const other = id === "accIn" ? "svcIn" : "accIn";
+  $(id).addEventListener("keydown", e => { if (e.key === "Enter") lookup(id); });
+  $(id).addEventListener("input", () => {
+    if ($(id).value) $(other).value = "";          // พิมพ์ช่องหนึ่ง ล้างอีกช่อง
+    setMsg("");
+    if (!$(id).value.trim()) hideResult();         // ลบเลขจนว่าง -> ซ่อนผลลัพธ์
+  });
+});
+
+/* =========================================================
+   4. แปลงตัวเลขเป็นตัวอักษรไทย (บาท)
+   ========================================================= */
+const DIGITS = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+const UNITS  = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน"];
+
+function thaiNumber(n) {
+  if (n === 0) return "";
+  if (n >= 1e6) return thaiNumber(Math.floor(n / 1e6)) + "ล้าน" + thaiNumber(n % 1e6);
+  const s = String(n);
+  let r = "";
+  for (let i = 0; i < s.length; i++) {
+    const d = +s[i], p = s.length - i - 1;
+    if (!d) continue;
+    if (p === 1)      r += (d === 1 ? "" : d === 2 ? "ยี่" : DIGITS[d]) + "สิบ";
+    else if (p === 0) r += (d === 1 && s.length > 1 ? "เอ็ด" : DIGITS[d]);
+    else              r += DIGITS[d] + UNITS[p];
+  }
+  return r;
+}
+
+function bahtText(a) {
+  const b = Math.floor(a);
+  const s = Math.round((a - b) * 100);
+  return thaiNumber(b) + "บาท" + (s ? thaiNumber(s) + "สตางค์" : "ถ้วน");
+}
+
+/* =========================================================
+   5. พิมพ์ใบรายงานการขอเบิกค่าใช้จ่าย
+   ========================================================= */
+$("printBtn").onclick = () => {
+  if (!current) return;
+  $("fPeriod").textContent  = $("period").value;
+  $("fName").textContent    = current.name;
+  $("fAmt").textContent     = fmt(current.amt);
+  $("fAmt2").textContent    = fmt(current.amt);
+  $("fWords").textContent   = bahtText(current.amt);
+  $("fMaker").textContent   = "(" + $("maker").value + ")";
+  $("fMakerPos").textContent = "(" + $("makerPos").value + ")";
+  $("fAppr").textContent    = "(" + $("appr").value + ")";
+  $("fApprPos").textContent = "(" + $("apprPos").value + ")";
+  window.print();
+};
+
+/* =========================================================
+   6. อ่าน QR: ตัวอ่านของเบราว์เซอร์ก่อน แล้วสำรองด้วย jsQR
+   ========================================================= */
+let detector = null;
+try {
+  if ("BarcodeDetector" in window) detector = new BarcodeDetector({ formats: ["qr_code"] });
+} catch (e) { /* ใช้ jsQR แทน */ }
+
+async function decode(canvas) {
+  if (detector) {
+    try {
+      const found = await detector.detect(canvas);
+      if (found.length) return found[0].rawValue;
+    } catch (e) { /* ลอง jsQR ต่อ */ }
+  }
+  const img = canvas.getContext("2d", { willReadFrequently: true })
+    .getImageData(0, 0, canvas.width, canvas.height);
+  const r = jsQR(img.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
+  return r ? r.data : null;
+}
+
+function handleQrText(text) {
+  const d = match(text);
+  if (d) { setMsg(""); show(d); return true; }
+  setMsg("อ่าน QR ได้ แต่ไม่พบศูนย์ในระบบ: " + text.slice(0, 40));
+  return false;
+}
+
+/* ---------- 6.1 กล้องสด ---------- */
+let stream = null, raf = 0;
+
+function stopCamera() {
+  cancelAnimationFrame(raf);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  $("v").style.display = "none";
+  $("stopBtn").style.display = "none";
+  $("scanBtn").style.display = "";
+}
+
+$("stopBtn").onclick = stopCamera;
+
+$("scanBtn").onclick = async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+  } catch (e) {
+    setMsg("เปิดกล้องสดไม่ได้ [" + (e && e.name || "error") +
+           "] ลองเปิดลิงก์ในแท็บใหม่และกดอนุญาตกล้อง หรือกดปุ่ม ถ่ายรูป QR แทน");
+    return;
+  }
+
+  const v = $("v");
+  v.srcObject = stream;
+  v.style.display = "block";
+  await v.play();
+  $("stopBtn").style.display = "inline-block";
+  $("scanBtn").style.display = "none";
+  setMsg("วาง QR ให้อยู่ในกรอบกล้อง…");
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  let busy = false;
+
+  const loop = async () => {
+    if (!stream) return;
+    if (v.videoWidth && !busy) {
+      busy = true;
+      canvas.width = v.videoWidth;
+      canvas.height = v.videoHeight;
+      ctx.drawImage(v, 0, 0);
+      const text = await decode(canvas);
+      busy = false;
+      if (!stream) return;
+      if (text && handleQrText(text)) { stopCamera(); return; }
+    }
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+};
+
+/* ---------- 6.2 ถ่ายรูป / เลือกรูป ---------- */
+$("photoBtn").onclick = () => $("photoIn").click();
+
+$("photoIn").onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  setMsg("กำลังอ่าน QR…");
+
+  const img = new Image();
+  img.onload = async () => {
+    let text = null;
+    for (const maxSize of [2000, 1400, 900, 500]) {          // ลองหลายขนาดภาพ
+      const s = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s);
+      c.height = Math.round(img.height * s);
+      c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0, c.width, c.height);
+      text = await decode(c);
+      if (text) break;
+    }
+    URL.revokeObjectURL(img.src);
+    if (!text) { setMsg("อ่าน QR จากรูปไม่ได้ ลองถ่ายใหม่ให้ QR ชัดและอยู่กลางภาพ"); return; }
+    handleQrText(text);
+  };
+  img.onerror = () => setMsg("เปิดรูปไม่ได้");
+  img.src = URL.createObjectURL(file);
+  e.target.value = "";
+};
+
+/* =========================================================
+   7. เปิดผ่านลิงก์ ?acc=รหัสลูกค้า (สำหรับ QR ที่สร้างเอง)
+   ========================================================= */
+const accParam = new URLSearchParams(location.search).get("acc");
+if (accParam) {
+  const d = match(accParam);
+  if (d) show(d);
+}
+</script>
+</body>
+</html>

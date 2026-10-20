@@ -1,0 +1,165 @@
+/* =========================================================
+   style.css — สแกน QR ค่าอินเทอร์เน็ต 3BB
+   สารบัญ: 1.ตัวแปรสี  2.พื้นฐาน  3.การ์ด  4.ฟอร์ม/ปุ่ม
+           5.กล้อง  6.ตารางผลลัพธ์  7.ใบเบิกจ่าย  8.พิมพ์
+   ========================================================= */
+
+/* ---------- 1. ตัวแปรสี (โหมดสว่าง / มืด) ---------- */
+:root {
+  --bg: #f6f7f9;
+  --fg: #1a1d21;
+  --card: #fff;
+  --bd: #d9dde3;
+  --ac: #e8590c;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a;
+    --fg: #eceef1;
+    --card: #1f2226;
+    --bd: #363b42;
+  }
+}
+
+/* ---------- 2. พื้นฐาน ---------- */
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Sarabun", "Noto Sans Thai", sans-serif;
+}
+
+.wrap { max-width: 760px; margin: auto; }
+
+h1 { margin: 0 0 12px; font-size: 20px; }
+
+label { display: block; margin: 8px 0 2px; font-size: 13px; opacity: .8; }
+
+.note { font-size: 12px; opacity: .65; }
+
+/* ---------- 3. การ์ด ---------- */
+.card {
+  margin-bottom: 12px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+}
+
+#result { display: none; }   /* แสดงเมื่อสแกน/ค้นหาเจอ */
+
+/* ---------- 4. ฟอร์ม / ปุ่ม ---------- */
+button {
+  padding: 10px 16px;
+  background: var(--ac);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.alt {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--bd);
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.search-row { display: flex; gap: 8px; margin-bottom: 6px; }
+
+.btn-print { width: 100%; margin-top: 14px; }
+
+#stopBtn { display: none; }
+
+#msg { margin-top: 8px; font-size: 13px; opacity: .8; }
+
+/* ---------- 5. กล้อง ---------- */
+video {
+  display: none;
+  width: 100%;
+  background: #000;
+  border-radius: 8px;
+}
+
+#v { margin-top: 10px; }
+
+/* ---------- 6. ตารางผลลัพธ์ ---------- */
+.ttl { margin-bottom: 8px; font-weight: 700; }
+
+.tw { overflow-x: auto; }
+
+.tb {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tb th,
+.tb td {
+  padding: 6px 4px;
+  border: 1px solid var(--fg);
+  text-align: center;
+}
+
+.tb th { background: rgba(128, 128, 128, .25); }
+
+.tb tr.hl td {
+  background: #ffb703;
+  color: #000;
+  font-weight: 700;
+}
+
+/* ---------- 7. ใบรายงานการขอเบิกค่าใช้จ่าย (ซ่อนบนหน้าจอ) ---------- */
+#form {
+  display: none;
+  background: #fff;
+  color: #000;
+  font-family: "Sarabun", "Noto Sans Thai", sans-serif;
+}
+
+#form table { width: 100%; border-collapse: collapse; font-size: 15px; }
+
+#form td { padding: 6px 8px; border: 1px solid #000; vertical-align: top; }
+
+.f-left   { width: 62%; }
+.f-title  { font-size: 22px; font-weight: 700; }
+.f-sub    { margin-top: 8px; }
+.f-sub2   { margin-top: 6px; }
+.f-logo   { text-align: center; vertical-align: middle; }
+.f-logo b { font-size: 26px; }
+.f-dept   { height: 50px; text-align: center; font-weight: 700; vertical-align: middle; }
+.f-h120   { height: 120px; }
+.f-h70    { height: 70px; }
+.f-total  { text-align: center; font-size: 17px; font-weight: 700; }
+
+.sig {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 80px;
+  font-size: 15px;
+  text-align: center;
+}
+
+/* ---------- 8. โหมดพิมพ์: แสดงเฉพาะใบเบิกจ่าย ---------- */
+@media print {
+  body { padding: 0; background: #fff; color: #000; }
+  .wrap { display: none; }
+  #form { display: block !important; padding: 20px; }
+}
